@@ -1,0 +1,2 @@
+{"user_id": "demo_3_0_0", "uuid": "3a48b93b-0de7-4e2a-b779-8f1f0c27af24", "timestamp": "2024-10-23 17:14:02", "type": "interaction", "value": {"type": "user_elicitation", "role": "user", "content": "Hey"}}
+{"user_id": "demo_3_0_0", "uuid": "3a48b93b-0de7-4e2a-b779-8f1f0c27af24", "timestamp": "2024-10-23 17:14:02", "type": "Interaction", "value": {"type": "user_elicitation", "role": "assistant", "content": "What brings you here today? Are you looking to start investing or reassess your current portfolio?"}}
