@@ -14,14 +14,10 @@ ROOT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "./")
 sys.path.append(ROOT_FILE)
 from components.induce_personality import construct_big_five_words
 from components.chat_conversation import (
-    # format_message_history,
     format_user_message,
     format_context,
     gradio_to_huggingface_message,
     huggingface_to_gradio_message,
-    # get_system_instruction,
-    prepare_tokenizer,
-    # format_rag_context,
     conversation_window,
     generate_response_local_api,
     generate_response_together_api,
@@ -30,9 +26,6 @@ from components.chat_conversation import (
 from components.constant import (
     CONV_WINDOW,
     API_URL,
-)
-from components.induce_personality import (
-    build_personality_prompt,
 )
 
 LOG_DIR = os.path.join(ROOT_FILE, "log/api/")
@@ -321,7 +314,7 @@ def create_demo():
 
     def tab_creation_exploration_stage(order, comp, context):
         english_order = ["1", "2", "3", "4", "5"]
-        with gr.Tab(f"{english_order[order]}-1:Discuss"):
+        with gr.Tab(f"{english_order[order]}:Discuss"):
             general_instruction = gr.HTML(label="General Instruction")
             with gr.Row():
                 with gr.Column():
@@ -339,33 +332,6 @@ def create_demo():
                         continue_button = gr.Button(value="Show More of the Advisor’s Answer", interactive=False)
             with gr.Row():
                 clear = gr.ClearButton([msg, chatbot])
-        with gr.Tab(f"{english_order[order]}-2:Eval"):
-            with gr.Row():
-                gr.HTML(value=EVALUATION_INSTRUCTION)
-            with gr.Row():
-                likelihood = gr.Radio(
-                    [1, 2, 3, 4, 5, 6, 7],
-                    label="I am likely to purchase the stock (1 = Strongly Disagree, 7 = Strongly Agree)",
-                    show_label=True,
-                )
-                reason = gr.Textbox(
-                    scale=1,
-                    label="Reason for Your Choice (Explain Your Reasoning & Highlight Useful Parts of Conversation)",
-                    lines=5,
-                )
-            with gr.Row():
-                confidence = gr.Radio(
-                    [1, 2, 3, 4, 5, 6, 7],
-                    label="I am confident in my decision (1 = Strongly Disagree, 7 = Strongly Agree)",
-                    show_label=True,
-                )
-                familiarity = gr.Radio(
-                    [1, 2, 3, 4, 5, 6, 7],
-                    label="What was your level of familiarity with the candidate stock before the interaction? (1 = Not Familiar, 7 = Very Familiar)",
-                )
-            with gr.Row():
-                textbox = gr.HTML()
-                evaluation_send_button = gr.Button(value="Send: Evaluation")
         return {
             "comp": comp,
             "system_instruction_context": context,
@@ -374,14 +340,8 @@ def create_demo():
             "continue_button": continue_button,
             "chatbot": chatbot,
             "msg": msg,
-            "reason": reason,
-            "likelihood": likelihood,
-            "confidence": confidence,
-            "familiarity": familiarity,
-            "evaluation_send_button": evaluation_send_button,
             "general_instruction": general_instruction,
             "round_instruction": round_instruction,
-            "textbox": textbox,
         }
 
     def tab_creation_preference_stage():
@@ -409,54 +369,55 @@ def create_demo():
             "user_narrative": user_narrative,
         }
 
-    def tab_final_evaluation():
-        with gr.Row():
-            gr.HTML(value=FINAL_EVALUATION)
-        with gr.Row():
-            gr.HTML(value="<h3>Rank the individual stocks below according to your desire to invest in each one.</h3>")
-        with gr.Row():
-            ranking_first_comp = gr.Dropdown(choices=[1, 2, 3, 4])
-            ranking_second_comp = gr.Dropdown(choices=[1, 2, 3, 4])
-            ranking_third_comp = gr.Dropdown(choices=[1, 2, 3, 4])
-            ranking_fourth_comp = gr.Dropdown(choices=[1, 2, 3, 4])
-        with gr.Row():
-            gr.HTML(
-                value='<h3>Choose how strongly you agree with each statement about the advisor (<strong style="color:red;">1 for Strongly Disagree</strong>, <strong style="color:green;">7 for Strongly Agree</strong>).</h3>'
-            )
-        with gr.Row():
-            perceived_personalization = likert_evaluation("The advisor understands my needs")
-            emotional_trust = likert_evaluation("I feel content about relying on this advisor for my decisions")
-        with gr.Row():
-            trust_in_competence = likert_evaluation("The advisor has good knowledge of the stock")
-            intention_to_use = likert_evaluation(
-                "I am willing to use this advisor as an aid to help with my decision about which stock to purchase"
-            )
+    def tab_personality_injection():
+        gr.Markdown("## Choose Your Advisor Personality")
+        # A radio button to choose between Optimist and Pragmatis
+        personality_choice = gr.Radio(
+            choices=["Optimist (Friendly, Daring, Confident)", "Pragmatist (Disciplined, Cautious, Practical)"],
+            value="Optimist",
+            label="Select a Personality",
+            interactive=True,
+        )
+        # An HTML element to display personality details/description
+        personality_description = gr.HTML(value="", label="Personality Details")
+        # A button that, when clicked, confirms the selection
+        personality_submit = gr.Button("Apply Personality")
 
-        with gr.Row():
-            usefulness = likert_evaluation("The advisor gave me good suggestions")
-            overall_satisfaction = likert_evaluation("Overall, I am satisfied with the advisor")
-        with gr.Row():
-            providing_information = likert_evaluation("The advisor provides the financial knowledge needed")
-        with gr.Row():
-            textbox = gr.HTML()
-            submit_ranking = gr.Button(value="Submit Final Evaluation")
+        # Return a dict with the UI components for later use
         return {
-            "first": ranking_first_comp,
-            "second": ranking_second_comp,
-            "third": ranking_third_comp,
-            "fourth": ranking_fourth_comp,
-            "evaluators": {
-                "perceived_personalization": perceived_personalization,
-                "emotional_trust": emotional_trust,
-                "trust_in_competence": trust_in_competence,
-                "intention_to_use": intention_to_use,
-                "usefulness": usefulness,
-                "overall_satisfaction": overall_satisfaction,
-                "providing_information": providing_information,
-            },
-            "submit_ranking": submit_ranking,
-            "text_box": textbox,
+            "personality_choice": personality_choice,
+            "personality_description": personality_description,
+            "personality_submit": personality_submit,
         }
+
+    def click_control_personality_injection_stage(
+        tabs, system_description_without_context, system_description_user_elicitation
+    ):
+        def respond_personality(personality_choice):
+            if personality_choice == "Optimist (Friendly, Daring, Confident)":
+                new_sys_desc_no_ctx = SYSTEM_INSTRUCTION_PERSONALITY.format(personality=PERSONALITY_EXT)
+                new_sys_desc_user_elicitation = SYSTEM_INSTRUCTION_PREFERENCE_ELICITATION_PERSONALITY.format(
+                    personality=PERSONALITY_EXT
+                )
+                message = "Optimist advisor personality is successfully applied."
+            else:
+                new_sys_desc_no_ctx = SYSTEM_INSTRUCTION_PERSONALITY.format(personality=PERSONALITY_INT)
+                new_sys_desc_user_elicitation = SYSTEM_INSTRUCTION_PREFERENCE_ELICITATION_PERSONALITY.format(
+                    personality=PERSONALITY_INT
+                )
+                message = "Pragmatist personality is successfully applied."
+            return new_sys_desc_no_ctx, new_sys_desc_user_elicitation, message
+
+        # Only pass the personality_choice as input
+        tabs["personality_submit"].click(
+            fn=respond_personality,
+            inputs=[tabs["personality_choice"]],
+            outputs=[
+                system_description_without_context,
+                system_description_user_elicitation,
+                tabs["personality_description"],
+            ],
+        )
 
     def click_control_exploration_stage(
         tabs, user_id, tab_session, user_preference_elicitation_session, system_description_without_context
@@ -469,12 +430,6 @@ def create_demo():
             continue_button,
             chatbot,
             msg,
-            reason,
-            likelihood,
-            confidence,
-            familiarity,
-            evaluation_send_button,
-            textbox,
         ) = (
             tabs["comp"],
             tabs["system_instruction_context"],
@@ -483,12 +438,6 @@ def create_demo():
             tabs["continue_button"],
             tabs["chatbot"],
             tabs["msg"],
-            tabs["reason"],
-            tabs["likelihood"],
-            tabs["confidence"],
-            tabs["familiarity"],
-            tabs["evaluation_send_button"],
-            tabs["textbox"],
         )
         system_instruction = ""
         start_conversation.click(
@@ -559,33 +508,6 @@ def create_demo():
             ],
             [tab_session, chatbot],
         )
-        evaluation_send_button.click(
-            lambda user_id, comp, tab_session, reason, likelihood, confidence, familiarity, evaluation_send_button, textbox: respond_evaluation(
-                user_id,
-                tab_session,
-                {
-                    "reason": reason,
-                    "likelihood": likelihood,
-                    "confidence": confidence,
-                    "familiarity": familiarity,
-                },
-                comp,
-                evaluation_send_button,
-                textbox,
-            ),
-            [
-                user_id,
-                comp,
-                tab_session,
-                reason,
-                likelihood,
-                confidence,
-                familiarity,
-                evaluation_send_button,
-                textbox,
-            ],
-            [tab_session, reason, likelihood, confidence, familiarity, evaluation_send_button, textbox],
-        )
 
     def click_control_preference_stage(
         tabs, user_id, user_preference_elicitation_session, system_description_user_elicitation
@@ -643,81 +565,6 @@ def create_demo():
             ),
             [user_id, user_preference_elicitation_session, elicitation_chatbot, system_description_user_elicitation],
             [user_preference_elicitation_session, elicitation_chatbot],
-        )
-
-    def click_control_final_evaluation(tabs, user_id, first_comp, second_comp, third_comp, fourth_comp, evaluators):
-        (
-            ranking_first_comp,
-            ranking_second_comp,
-            ranking_third_comp,
-            ranking_fourth_comp,
-        ) = (
-            tabs["first"],
-            tabs["second"],
-            tabs["third"],
-            tabs["fourth"],
-        )
-        (
-            perceived_personalization,
-            emotional_trust,
-            trust_in_competence,
-            intention_to_use,
-            usefulness,
-            overall_satisfaction,
-            providing_information,
-        ) = (
-            evaluators["perceived_personalization"],
-            evaluators["emotional_trust"],
-            evaluators["trust_in_competence"],
-            evaluators["intention_to_use"],
-            evaluators["usefulness"],
-            evaluators["overall_satisfaction"],
-            evaluators["providing_information"],
-        )
-        result_textbox = tabs["text_box"]
-        submit_ranking = tabs["submit_ranking"]
-        submit_ranking.click(
-            lambda user_id, first_comp, ranking_first_comp, second_comp, ranking_second_comp, third_comp, ranking_third_comp, fourth_comp, ranking_fourth_comp, perceived_personalization, emotional_trust, trust_in_competence, intention_to_use, usefulness, overall_satisfaction, providing_information, submit_ranking: respond_final_ranking(
-                user_id,
-                first_comp,
-                ranking_first_comp,
-                second_comp,
-                ranking_second_comp,
-                third_comp,
-                ranking_third_comp,
-                fourth_comp,
-                ranking_fourth_comp,
-                perceived_personalization,
-                emotional_trust,
-                trust_in_competence,
-                intention_to_use,
-                usefulness,
-                overall_satisfaction,
-                providing_information,
-                submit_ranking,
-            ),
-            # Input components (names and rankings)
-            [
-                user_id,
-                first_comp,
-                ranking_first_comp,
-                second_comp,
-                ranking_second_comp,
-                third_comp,
-                ranking_third_comp,
-                fourth_comp,
-                ranking_fourth_comp,
-                perceived_personalization,
-                emotional_trust,
-                trust_in_competence,
-                intention_to_use,
-                usefulness,
-                overall_satisfaction,
-                providing_information,
-                submit_ranking,
-            ],
-            # Output component(s) where you want the result to appear, e.g., result_textbox
-            [result_textbox, submit_ranking],
         )
 
     def respond(
@@ -869,9 +716,6 @@ def create_demo():
                 {"type": tab_name, "role": "assistant", "content": outputs_text},
                 feedback_file_interaction,
             )
-            # log_action(user_id, tab_name, "User Message", first_message)
-            # log_action(user_id, tab_name, "Response", outputs_text)
-            # Store the updated history for this tab
             tab_data["history"] = history
         if user_elicitation:
             save_feedback(
@@ -974,133 +818,6 @@ def create_demo():
             tab_data["history"] = history
         return tab_data, history
 
-    def respond_evaluation(user_id, tab_data, evals, tab_name, evaluation_send_button, textbox):
-
-        # dropdown, readon_button, multi-evaluator
-        if evals["likelihood"] is None or evals["confidence"] is None or evals["familiarity"] is None:
-            return (
-                tab_data,
-                evals["reason"],
-                evals["likelihood"],
-                evals["confidence"],
-                evals["familiarity"],
-                evaluation_send_button,
-                """<div style="background-color: #f8d7da; color: #721c24; padding: 15px; border: 1px solid #f5c6cb; border-radius: 5px; margin-bottom: 20px;">
-                    <strong>Please make sure that you answer all the questions.</strong>
-                    </div>""",
-            )
-        else:
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "round_evaluation",
-                {**evals, "company": tab_name},
-                feedback_file_round_evaluation,
-            )
-            # log_action(user_id, tab_name, "Round Evaluation", "Following")
-            # for key, value in evals.items():
-            #     log_action(user_id, tab_name, key, value)
-            # Store the reason for this tab
-            tab_data["multi_evaluator"] = evals
-            evaluation_send_button = gr.Button(value="Evaluation receirved", interactive=False)
-            return (
-                tab_data,
-                evals["reason"],
-                evals["likelihood"],
-                evals["confidence"],
-                evals["familiarity"],
-                evaluation_send_button,
-                """<div style="background-color: #d4edda; color: #155724; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin-bottom: 20px;">
-                        <strong>Thank you for submitting your evaluation. You may proceed to the next tab.</strong>
-                    </div>""",
-            )
-
-    def respond_final_ranking(
-        user_id,
-        first_comp,
-        ranking_first_comp,
-        second_comp,
-        ranking_second_comp,
-        third_comp,
-        ranking_third_comp,
-        fourth_comp,
-        ranking_fourth_comp,
-        perceived_personalization,
-        emotional_trust,
-        trust_in_competence,
-        intention_to_use,
-        usefulness,
-        overall_satisfaction,
-        providing_information,
-        submit_ranking,
-    ):
-        # make sure that they are not the same
-        ranking_list = [
-            ranking_first_comp,
-            ranking_second_comp,
-            ranking_third_comp,
-            ranking_fourth_comp,
-        ]
-        if len(set(ranking_list)) != len(ranking_list):
-            return (
-                """<div style="background-color: #f8d7da; color: #721c24; padding: 15px; border: 1px solid #f5c6cb; border-radius: 5px; margin-bottom: 20px;">
-    <strong>Please make sure that you are not ranking the same stock multiple times.</strong>
-</div>""",
-                submit_ranking,
-            )
-        if any(
-            var is None
-            for var in [
-                perceived_personalization,
-                emotional_trust,
-                trust_in_competence,
-                intention_to_use,
-                usefulness,
-                overall_satisfaction,
-                providing_information,
-            ]
-        ):
-            return (
-                """<div style="background-color: #f8d7da; color: #721c24; padding: 15px; border: 1px solid #f5c6cb; border-radius: 5px; margin-bottom: 20px;">
-    <strong>Please make sure that you answer all the statements.</strong>
-</div>""",
-                submit_ranking,
-            )
-        else:
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "final_ranking",
-                {
-                    "comp_order": [first_comp, second_comp, third_comp, fourth_comp],
-                    "ranking": ranking_list,
-                },
-                feedback_file_final_ranking,
-            )
-
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "final_ranking_survey",
-                {
-                    "perceived_personalization": perceived_personalization,
-                    "emotional_trust": emotional_trust,
-                    "trust_in_competence": trust_in_competence,
-                    "intention_to_use": intention_to_use,
-                    "usefulness": usefulness,
-                    "overall_satisfaction": overall_satisfaction,
-                    "providing_information": providing_information,
-                },
-                feedback_file_final_survey,
-            )
-            submit_ranking = gr.Button(value="Final evaluaiotn received", interactive=False)
-            return (
-                """<div style="background-color: #d4edda; color: #155724; padding: 15px; border: 1px solid #c3e6cb; border-radius: 5px; margin-bottom: 20px;">
-                        <strong>Thank you for participating in the experiment. This concludes the session. You may now close the tab.</strong>
-                    </div>""",
-                submit_ranking,
-            )
-
     def get_context(index, raw_context_list, stock_context_list):
         comp = raw_context_list[index]["short_name"]
         context = stock_context_list[index]
@@ -1109,7 +826,7 @@ def create_demo():
 
     def set_user_id(request: gr.Request):
         #  DEBUG
-        user_id = "user_0_0_0"
+        user_id = "user_2_0_0"
         # user_id = request.username
         user_in_narrative_id = user_id.split("_")[-1]
         narrative_id = user_id.split("_")[-2]
@@ -1169,12 +886,6 @@ def create_demo():
         fourth_comp, fourth_context, fourth_general_instruction, fourth_round_instruction = get_context(
             3, raw_context_list, stock_context_list
         )
-        # Final Evaluation
-        ranking_first_comp = gr.Dropdown(choices=[1, 2, 3, 4], label=first_comp)
-        ranking_second_comp = gr.Dropdown(choices=[1, 2, 3, 4], label=second_comp)
-        ranking_third_comp = gr.Dropdown(choices=[1, 2, 3, 4], label=third_comp)
-        ranking_fourth_comp = gr.Dropdown(choices=[1, 2, 3, 4], label=fourth_comp)
-
         return (
             user_id,
             user_in_narrative_id,
@@ -1201,10 +912,6 @@ def create_demo():
             fourth_context,
             fourth_general_instruction,
             fourth_round_instruction,
-            ranking_first_comp,
-            ranking_second_comp,
-            ranking_third_comp,
-            ranking_fourth_comp,
         )
 
     with gr.Blocks(title="RAG Chatbot Q&A", theme="Soft") as demo:
@@ -1245,11 +952,16 @@ def create_demo():
         second_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
         third_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
         fourth_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
-        # EXperiment Instruction
-        with gr.Tab("Experiment Instruction") as instruction_tab:
-            gr.HTML(value=INSTRUCTION_PAGE, label="Experiment Instruction")
+        # Demonstration Instruction
+        with gr.Tab("Demonstration Instruction") as instruction_tab:
+            gr.HTML(value=INSTRUCTION_PAGE, label="Demonstration Instruction")
         # User Preference Elicitation Tab
-        with gr.Tab("Preference Elicitation Stage") as preference_elicitation_tab:
+        with gr.Tab("Personality Injection") as personality_injection_tab:
+            personality_injection_tab = tab_personality_injection()
+            click_control_personality_injection_stage(
+                personality_injection_tab, system_description_without_context, system_description_user_elicitation
+            )
+        with gr.Tab("User Preference Elicitataion") as preference_elicitation_tab:
             user_preference_elicitation_tab = tab_creation_preference_stage()
             user_narrative = user_preference_elicitation_tab["user_narrative"]
             click_control_preference_stage(
@@ -1258,7 +970,7 @@ def create_demo():
                 user_preference_elicitation_session,
                 system_description_user_elicitation,
             )
-        with gr.Tab("Financial Decision Stage") as financial_decision:
+        with gr.Tab("Personalized Stock Assessment") as financial_decision:
             # Experiment Tag
             first_tab = tab_creation_exploration_stage(0, first_comp, first_context)
             first_general_instruction, first_round_instruction = (
@@ -1308,24 +1020,24 @@ def create_demo():
                 user_preference_elicitation_session,
                 system_description_without_context,
             )
-        with gr.Tab("Final Evaluation Stage") as final_evaluation:
-            final_evaluation_tab = tab_final_evaluation()
-            (
-                ranking_first_comp,
-                ranking_second_comp,
-                ranking_third_comp,
-                ranking_fourth_comp,
-                evaluators,
-            ) = (
-                final_evaluation_tab["first"],
-                final_evaluation_tab["second"],
-                final_evaluation_tab["third"],
-                final_evaluation_tab["fourth"],
-                final_evaluation_tab["evaluators"],
-            )
-            click_control_final_evaluation(
-                final_evaluation_tab, user_id, first_comp, second_comp, third_comp, fourth_comp, evaluators
-            )
+        # with gr.Tab("Final Evaluation Stage") as final_evaluation:
+        #     final_evaluation_tab = tab_final_evaluation()
+        #     (
+        #         ranking_first_comp,
+        #         ranking_second_comp,
+        #         ranking_third_comp,
+        #         ranking_fourth_comp,
+        #         evaluators,
+        #     ) = (
+        #         final_evaluation_tab["first"],
+        #         final_evaluation_tab["second"],
+        #         final_evaluation_tab["third"],
+        #         final_evaluation_tab["fourth"],
+        #         final_evaluation_tab["evaluators"],
+        #     )
+        #     click_control_final_evaluation(
+        #         final_evaluation_tab, user_id, first_comp, second_comp, third_comp, fourth_comp, evaluators
+        #     )
 
         demo.load(
             set_initial_values,
@@ -1356,10 +1068,6 @@ def create_demo():
                 fourth_context,
                 fourth_general_instruction,
                 fourth_round_instruction,
-                ranking_first_comp,
-                ranking_second_comp,
-                ranking_third_comp,
-                ranking_fourth_comp,
             ],
         )
     return demo
