@@ -418,7 +418,10 @@ def create_demo():
                     personality=PERSONALITY_INT
                 )
                 message = "Pragmatist personality is successfully applied."
-            elif personality_choice == "Misadvisor (Unreliable, Messy, Sarcastic)":
+            elif (
+                personality_choice
+                == "Misadvisor (Just for fun! Unreliable, Messy, Sarcastic - don't take it seriously!)"
+            ):
                 new_sys_desc_no_ctx = SYSTEM_INSTRUCTION_PERSONALITY.format(personality=PERSONALITY_MISADVISOR)
                 new_sys_desc_user_elicitation = SYSTEM_INSTRUCTION_PREFERENCE_ELICITATION_PERSONALITY.format(
                     personality=PERSONALITY_MISADVISOR
