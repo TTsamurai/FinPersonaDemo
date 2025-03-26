@@ -1294,5 +1294,6 @@ if __name__ == "__main__":
     user_list, demo_list = load_username_and_pwd()
     demo.launch(
         share=True,
-        # auth=user_list + demo_list + ["test", "test"],
+        auth=("ecir_demo", "ecir_demo"),  # user_list[0], user_list[1]
+        auth_message="Please enter the username and password to access the demo.",
     )
