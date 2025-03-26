@@ -68,28 +68,28 @@ feedback_file_final_survey = feedback_dir / f"final_survey_{uuid_this_session}_{
 feedback_folder = feedback_file_interaction.parent
 feedback_folder.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
 
-scheduler = CommitScheduler(
-    repo_id=os.getenv("LOGGING_FILE"),
-    repo_type="dataset",
-    folder_path=feedback_folder,
-    path_in_repo="data",
-    token=os.getenv("HUGGINGFACE_HUB_TOKEN"),
-    every=1,
-)
+# scheduler = CommitScheduler(
+#     repo_id=os.getenv("LOGGING_FILE"),
+#     repo_type="dataset",
+#     folder_path=feedback_folder,
+#     path_in_repo="data",
+#     token=os.getenv("HUGGINGFACE_HUB_TOKEN"),
+#     every=1,
+# )
 
 
 # Function to save user feedback
-def save_feedback(user_id: str, uuid: str, type: str, value, feedback_file) -> None:
-    """
-    Append input/outputs and user feedback to a JSON Lines file using a thread lock to avoid concurrent writes from different users.
-    """
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with scheduler.lock:
-        with feedback_file.open("a") as f:
-            f.write(
-                json.dumps({"user_id": user_id, "uuid": uuid, "timestamp": timestamp, "type": type, "value": value})
-            )
-            f.write("\n")
+# def save_feedback(user_id: str, uuid: str, type: str, value, feedback_file) -> None:
+#     """
+#     Append input/outputs and user feedback to a JSON Lines file using a thread lock to avoid concurrent writes from different users.
+#     """
+#     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+#     with scheduler.lock:
+#         with feedback_file.open("a") as f:
+#             f.write(
+#                 json.dumps({"user_id": user_id, "uuid": uuid, "timestamp": timestamp, "type": type, "value": value})
+#             )
+#             f.write("\n")
 
 
 # Load the required static content from files
@@ -281,14 +281,14 @@ def add_user_profile_to_system_instruction(
             else:
                 summ, _ = generate_response_debugging(summarization_instruction)
             user_preference_elicitation_data["summary_history"] = summ
-            # log_action(user_id, "Prompt", "Preference Elicitation Summarization", summ)
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "preference_elicitation_summarization",
-                {"summarization": summ},
-                feedback_file_summarization,
-            )
+            # # log_action(user_id, "Prompt", "Preference Elicitation Summarization", summ)
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "preference_elicitation_summarization",
+            #     {"summarization": summ},
+            #     feedback_file_summarization,
+            # )
         system_instruction += f"\nUser Profile collected in the previous conversations: {user_preference_elicitation_data['summary_history']}\n"
     else:
         system_instruction += (
@@ -644,39 +644,39 @@ def create_demo():
         history = huggingface_to_gradio_message(history)
         if tab_name is not None:
             # Log the user message and response
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "interaction",
-                {"type": tab_name, "role": "user", "content": message},
-                feedback_file_interaction,
-            )
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "interaction",
-                {"type": tab_name, "role": "assistant", "content": outputs_text},
-                feedback_file_interaction,
-            )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "interaction",
+            #     {"type": tab_name, "role": "user", "content": message},
+            #     feedback_file_interaction,
+            # )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "interaction",
+            #     {"type": tab_name, "role": "assistant", "content": outputs_text},
+            #     feedback_file_interaction,
+            # )
             # log_action(user_id, tab_name, "User Message", message)
             # log_action(user_id, tab_name, "Response", outputs_text)
             # Store the updated history for this tab
             tab_data["history"] = history
         if user_elicitation:
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "Interaction",
-                {"type": "user_elicitation", "role": "user", "content": message},
-                feedback_file_interaction,
-            )
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "Interaction",
-                {"type": "user_elicitation", "role": "assistant", "content": outputs_text},
-                feedback_file_interaction,
-            )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "Interaction",
+            #     {"type": "user_elicitation", "role": "user", "content": message},
+            #     feedback_file_interaction,
+            # )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "Interaction",
+            #     {"type": "user_elicitation", "role": "assistant", "content": outputs_text},
+            #     feedback_file_interaction,
+            # )
             # log_action(user_id, "User_Elicitation", "User Message", message)
             # log_action(user_id, "User_Elicitation", "Response", outputs_text)
             tab_data["history"] = history
@@ -726,36 +726,36 @@ def create_demo():
         history = huggingface_to_gradio_message(history)
         if tab_name is not None:
             # Log the user message and response
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "interaction",
-                {"type": tab_name, "role": "user", "content": first_message},
-                feedback_file_interaction,
-            )
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "interaction",
-                {"type": tab_name, "role": "assistant", "content": outputs_text},
-                feedback_file_interaction,
-            )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "interaction",
+            #     {"type": tab_name, "role": "user", "content": first_message},
+            #     feedback_file_interaction,
+            # )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "interaction",
+            #     {"type": tab_name, "role": "assistant", "content": outputs_text},
+            #     feedback_file_interaction,
+            # )
             tab_data["history"] = history
         if user_elicitation:
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "interaction",
-                {"type": "user_elicitation", "role": "user", "content": first_message},
-                feedback_file_interaction,
-            )
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "Interaction",
-                {"type": "user_elicitation", "role": "assistant", "content": outputs_text},
-                feedback_file_interaction,
-            )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "interaction",
+            #     {"type": "user_elicitation", "role": "user", "content": first_message},
+            #     feedback_file_interaction,
+            # )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "Interaction",
+            #     {"type": "user_elicitation", "role": "assistant", "content": outputs_text},
+            #     feedback_file_interaction,
+            # )
             tab_data["history"] = history
         return (
             tab_data,
@@ -803,42 +803,42 @@ def create_demo():
             outputs_text, history = generate_response_debugging(history_with_user_utterance)
         history = huggingface_to_gradio_message(history)
         if tab_name is not None:
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "interaction",
-                {
-                    "type": tab_name,
-                    "role": "user",
-                    "content": message,
-                },
-                feedback_file_interaction,
-            )
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "interaction",
-                {"type": tab_name, "role": "assistant", "content": outputs_text},
-                feedback_file_interaction,
-            )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "interaction",
+            #     {
+            #         "type": tab_name,
+            #         "role": "user",
+            #         "content": message,
+            #     },
+            #     feedback_file_interaction,
+            # )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "interaction",
+            #     {"type": tab_name, "role": "assistant", "content": outputs_text},
+            #     feedback_file_interaction,
+            # )
 
             # Update history for this tab
             tab_data["history"] = history
         if user_elicitation:
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "interaction",
-                {"type": "user_elicitation", "role": "user", "content": message},
-                feedback_file_interaction,
-            )
-            save_feedback(
-                user_id,
-                uuid_this_session,
-                "interaction",
-                {"type": "user_elicitation", "role": "assistant", "content": outputs_text},
-                feedback_file_interaction,
-            )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "interaction",
+            #     {"type": "user_elicitation", "role": "user", "content": message},
+            #     feedback_file_interaction,
+            # )
+            # save_feedback(
+            #     user_id,
+            #     uuid_this_session,
+            #     "interaction",
+            #     {"type": "user_elicitation", "role": "assistant", "content": outputs_text},
+            #     feedback_file_interaction,
+            # )
             tab_data["history"] = history
         return tab_data, history
 
