@@ -55,6 +55,7 @@ SYSTEM_INSTRUCTION_PREFERENCE_ELICITATION_PERSONALITY_FILE = os.path.join(
 SUMMARIZATION_PROMPT_FILE = os.path.join(STATIC_FILE, "txt/system_summarization_user_preference_elicitation.txt")
 PERSONALITY_EXT_FILE = os.path.join(STATIC_FILE, "txt/personality_ext.txt")
 PERSONALITY_INT_FILE = os.path.join(STATIC_FILE, "txt/personality_int.txt")
+PERSONALITY_MISADVISOR_FILE = os.path.join(STATIC_FILE, "txt/personality_misadvisor.txt")
 
 uuid_this_session = str(uuid.uuid4())
 system_order = "first"
@@ -120,6 +121,7 @@ SYSTEM_INSTRUCTION_PREFERENCE_ELICITATION_PERSONALITY = load_static_content(
 SUMMARIZATION_PROMPT = load_static_content(SUMMARIZATION_PROMPT_FILE)
 PERSONALITY_EXT = load_static_content(PERSONALITY_EXT_FILE)
 PERSONALITY_INT = load_static_content(PERSONALITY_INT_FILE)
+PERSONALITY_MISADVISOR = load_static_content(PERSONALITY_MISADVISOR_FILE)
 
 # Other constants
 FIRST_MESSAGE = "Hey"
@@ -178,6 +180,7 @@ def build_context_element(context):
     sector = context["sector"]
     business_summary = context["business_summary"]
     name = context["short_name"]
+    print(name)
     stock_price = context["price_data"]
     earning = context["earning_summary"]
     beta = context["beta"]
@@ -302,32 +305,37 @@ def likert_evaluation(content):
     )
 
 
-def reorder_list_based_on_user_in_narrative_id(user_in_narrative_id, target_list):
-    # user_in_narrative
-    random_order = {"0": [3, 2, 1, 0], "1": [1, 0, 3, 2], "2": [2, 1, 0, 3], "3": [1, 3, 2, 0], "4": [0, 3, 1, 2]}
-    user_in_narrative_random = random_order[user_in_narrative_id]
-    return [target_list[i] for i in user_in_narrative_random]
-
-
 def create_demo():
     global context_info_list, terminator
 
     def tab_creation_exploration_stage(order, comp, context):
-        english_order = ["1", "2", "3", "4", "5"]
-        with gr.Tab(f"{english_order[order]}:Discuss"):
+        comp_list = [
+            "Eli Lilly and Company",
+            "Johnson & Johnson",
+            "Philip Morris International Inc",
+            "Exxon Mobil Corporation",
+            "Amazon.com, Inc.",
+            "JP Morgan Chase & Co.",
+            "Coca-Cola Company",
+            "Walmart Inc.",
+            "Apple Inc.",
+            "Procter & Gamble Company",
+            "Tesla, Inc.",
+            "Bank of America Corporation",
+        ]
+        with gr.Tab(comp_list[order], id=comp):
             general_instruction = gr.HTML(label="General Instruction")
             with gr.Row():
-                with gr.Column():
-                    with gr.Row():
-                        round_instruction = gr.HTML(label="Round Instruction")
+                # with gr.Column():
+                #     with gr.Row():
+                #         round_instruction = gr.HTML(label="Round Instruction")
                 with gr.Column():
                     with gr.Row():
                         chatbot = gr.Chatbot(height=600)
                     with gr.Row():
                         start_conversation = gr.Button(value="Start Conversation")
                     with gr.Row():
-                        msg = gr.Textbox(scale=1, label="User Input")
-                    with gr.Row():
+                        msg = gr.Textbox(scale=2, lines=3, label="User Input", container=False)
                         msg_button = gr.Button(value="Send This Message to Advisor", interactive=False)
                         continue_button = gr.Button(value="Show More of the Advisor’s Answer", interactive=False)
             with gr.Row():
@@ -341,23 +349,23 @@ def create_demo():
             "chatbot": chatbot,
             "msg": msg,
             "general_instruction": general_instruction,
-            "round_instruction": round_instruction,
+            # "round_instruction": round_instruction,
         }
 
     def tab_creation_preference_stage():
+        # Custom CSS to reduce padding and margin of the textbox
         with gr.Row():
             gr.HTML(value=PREFERENCE_ELICITATION_TASK, label="Preference Elicitation Task")
         with gr.Row():
-            with gr.Column():
-                user_narrative = gr.HTML(label="User Narrative")
+            # with gr.Column():
+            #     user_narrative = gr.HTML(label="User Narrative")
             with gr.Column():
                 with gr.Row():
                     elicitation_chatbot = gr.Chatbot(height=600)
                 with gr.Row():
                     start_conversation = gr.Button(value="Start Conversation")
                 with gr.Row():
-                    msg = gr.Textbox(scale=1, label="User Input")
-                with gr.Row():
+                    msg = gr.Textbox(scale=2, lines=3, label="User Input", container=False)
                     msg_button = gr.Button(value="Send This Message to Advisor", interactive=False)
                     continue_button = gr.Button(value="Show More of the Advisor’s Answer", interactive=False)
         return {
@@ -366,14 +374,18 @@ def create_demo():
             "continue_button": continue_button,
             "msg": msg,
             "elicitation_chatbot": elicitation_chatbot,
-            "user_narrative": user_narrative,
+            # "user_narrative": user_narrative,
         }
 
     def tab_personality_injection():
         gr.Markdown("## Choose Your Advisor Personality")
         # A radio button to choose between Optimist and Pragmatis
         personality_choice = gr.Radio(
-            choices=["Optimist (Friendly, Daring, Confident)", "Pragmatist (Disciplined, Cautious, Practical)"],
+            choices=[
+                "Optimist (Friendly, Daring, Confident)",
+                "Pragmatist (Disciplined, Cautious, Practical)",
+                "Misadvisor (Just for fun! Unreliable, Messy, Sarcastic - don't take it seriously!)",
+            ],
             value="Optimist",
             label="Select a Personality",
             interactive=True,
@@ -400,12 +412,24 @@ def create_demo():
                     personality=PERSONALITY_EXT
                 )
                 message = "Optimist advisor personality is successfully applied."
-            else:
+            elif personality_choice == "Pragmatist (Disciplined, Cautious, Practical)":
                 new_sys_desc_no_ctx = SYSTEM_INSTRUCTION_PERSONALITY.format(personality=PERSONALITY_INT)
                 new_sys_desc_user_elicitation = SYSTEM_INSTRUCTION_PREFERENCE_ELICITATION_PERSONALITY.format(
                     personality=PERSONALITY_INT
                 )
                 message = "Pragmatist personality is successfully applied."
+            elif personality_choice == "Misadvisor (Unreliable, Messy, Sarcastic)":
+                new_sys_desc_no_ctx = SYSTEM_INSTRUCTION_PERSONALITY.format(personality=PERSONALITY_MISADVISOR)
+                new_sys_desc_user_elicitation = SYSTEM_INSTRUCTION_PREFERENCE_ELICITATION_PERSONALITY.format(
+                    personality=PERSONALITY_MISADVISOR
+                )
+                message = "Misadvisor personality is successfully applied."
+            else:
+                new_sys_desc_no_ctx = SYSTEM_INSTRUCTION_PERSONALITY.format(personality="None")
+                new_sys_desc_user_elicitation = SYSTEM_INSTRUCTION_PREFERENCE_ELICITATION_PERSONALITY.format(
+                    personality="None"
+                )
+                message = "No personality is applied."
             return new_sys_desc_no_ctx, new_sys_desc_user_elicitation, message
 
         # Only pass the personality_choice as input
@@ -858,21 +882,22 @@ def create_demo():
     def get_stock_related_context(narrative_id, user_in_narrative_id):
         raw_context_list = build_raw_context_list(context_info_list[int(narrative_id)])
         stock_context_list = build_context(context_info_list[int(narrative_id)])
-        raw_context_list = reorder_list_based_on_user_in_narrative_id(user_in_narrative_id, raw_context_list)
-        stock_context_list = reorder_list_based_on_user_in_narrative_id(user_in_narrative_id, stock_context_list)
         return raw_context_list, stock_context_list
 
     def set_initial_values(request: gr.Request):
         # Set user specific information (Session State)
         user_id, user_in_narrative_id, narrative_id, experiment_id = set_user_id(request)
-        # System instruction without prompt
+        user_id = "user_2_0_0"
+        user_in_narrative_id = "0"
+        experiment_id = "2"
         system_description_without_context = get_inst_without_context(experiment_id)
-        # user_preference_elicitation
         system_description_user_elicitation = get_user_preference_elicitation(experiment_id)
-        # Stock related context
-        raw_context_list, stock_context_list = get_stock_related_context(narrative_id, user_in_narrative_id)
-        # User Narrative
-        user_narrative = get_user_narrative_from_raw(raw_context_list[0]["user_narrative"])
+
+        first_raw_context_list, first_stock_context_list = get_stock_related_context(0, user_in_narrative_id)
+        second_raw_context_list, second_stock_context_list = get_stock_related_context(1, user_in_narrative_id)
+        third_raw_context_list, third_stock_context_list = get_stock_related_context(2, user_in_narrative_id)
+        raw_context_list = first_raw_context_list + second_raw_context_list + third_raw_context_list
+        stock_context_list = first_stock_context_list + second_stock_context_list + third_stock_context_list
         # Tab Context
         first_comp, first_context, first_general_instruction, first_round_instruction = get_context(
             0, raw_context_list, stock_context_list
@@ -886,6 +911,30 @@ def create_demo():
         fourth_comp, fourth_context, fourth_general_instruction, fourth_round_instruction = get_context(
             3, raw_context_list, stock_context_list
         )
+        fifth_comp, fifth_context, fifth_general_instruction, fifth_round_instruction = get_context(
+            4, raw_context_list, stock_context_list
+        )
+        sixth_comp, sixth_context, sixth_general_instruction, sixth_round_instruction = get_context(
+            5, raw_context_list, stock_context_list
+        )
+        seventh_comp, seventh_context, seventh_general_instruction, seventh_round_instruction = get_context(
+            6, raw_context_list, stock_context_list
+        )
+        eighth_comp, eighth_context, eighth_general_instruction, eighth_round_instruction = get_context(
+            7, raw_context_list, stock_context_list
+        )
+        ninth_comp, ninth_context, ninth_general_instruction, ninth_round_instruction = get_context(
+            8, raw_context_list, stock_context_list
+        )
+        tenth_comp, tenth_context, tenth_general_instruction, tenth_round_instruction = get_context(
+            9, raw_context_list, stock_context_list
+        )
+        eleventh_comp, eleventh_context, eleventh_general_instruction, eleventh_round_instruction = get_context(
+            10, raw_context_list, stock_context_list
+        )
+        twelfth_comp, twelfth_context, twelfth_general_instruction, twelfth_round_instruction = get_context(
+            11, raw_context_list, stock_context_list
+        )
         return (
             user_id,
             user_in_narrative_id,
@@ -895,23 +944,55 @@ def create_demo():
             system_description_user_elicitation,
             raw_context_list,
             stock_context_list,
-            user_narrative,
+            # user_narrative,
             first_comp,
             first_context,
             first_general_instruction,
-            first_round_instruction,
+            # first_round_instruction,
             second_comp,
             second_context,
             second_general_instruction,
-            second_round_instruction,
+            # second_round_instruction,
             third_comp,
             third_context,
             third_general_instruction,
-            third_round_instruction,
+            # third_round_instruction,
             fourth_comp,
             fourth_context,
             fourth_general_instruction,
-            fourth_round_instruction,
+            # fourth_round_instruction,
+            fifth_comp,
+            fifth_context,
+            fifth_general_instruction,
+            # fifth_round_instruction,
+            sixth_comp,
+            sixth_context,
+            sixth_general_instruction,
+            # sixth_round_instruction,
+            seventh_comp,
+            seventh_context,
+            seventh_general_instruction,
+            # seventh_round_instruction,
+            eighth_comp,
+            eighth_context,
+            eighth_general_instruction,
+            # eighth_round_instruction,
+            ninth_comp,
+            ninth_context,
+            ninth_general_instruction,
+            # ninth_round_instruction,
+            tenth_comp,
+            tenth_context,
+            tenth_general_instruction,
+            # tenth_round_instruction,
+            eleventh_comp,
+            eleventh_context,
+            eleventh_general_instruction,
+            # eleventh_round_instruction,
+            twelfth_comp,
+            twelfth_context,
+            twelfth_general_instruction,
+            # twelfth_round_instruction,
         )
 
     with gr.Blocks(title="RAG Chatbot Q&A", theme="Soft") as demo:
@@ -933,6 +1014,22 @@ def create_demo():
         third_context = gr.State()
         fourth_comp = gr.State()
         fourth_context = gr.State()
+        fifth_comp = gr.State()
+        fifth_context = gr.State()
+        sixth_comp = gr.State()
+        sixth_context = gr.State()
+        seventh_comp = gr.State()
+        seventh_context = gr.State()
+        eighth_comp = gr.State()
+        eighth_context = gr.State()
+        ninth_comp = gr.State()
+        ninth_context = gr.State()
+        tenth_comp = gr.State()
+        tenth_context = gr.State()
+        eleventh_comp = gr.State()
+        eleventh_context = gr.State()
+        twelfth_comp = gr.State()
+        twelfth_context = gr.State()
         # Tab data
         if DEBUG:
             user_preference_elicitation_session = gr.State(
@@ -952,6 +1049,15 @@ def create_demo():
         second_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
         third_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
         fourth_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
+        fifth_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
+        sixth_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
+        seventh_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
+        eighth_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
+        ninth_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
+        tenth_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
+        eleventh_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
+        twelfth_comp_session = gr.State(value={"history": [], "selection": "", "reason": ""})
+
         # Demonstration Instruction
         with gr.Tab("Demonstration Instruction") as instruction_tab:
             gr.HTML(value=INSTRUCTION_PAGE, label="Demonstration Instruction")
@@ -961,9 +1067,9 @@ def create_demo():
             click_control_personality_injection_stage(
                 personality_injection_tab, system_description_without_context, system_description_user_elicitation
             )
-        with gr.Tab("User Preference Elicitataion") as preference_elicitation_tab:
+        with gr.Tab("User Preference Elicitation") as preference_elicitation_tab:
             user_preference_elicitation_tab = tab_creation_preference_stage()
-            user_narrative = user_preference_elicitation_tab["user_narrative"]
+            # user_narrative = user_preference_elicitation_tab["user_narrative"]
             click_control_preference_stage(
                 user_preference_elicitation_tab,
                 user_id,
@@ -973,10 +1079,6 @@ def create_demo():
         with gr.Tab("Personalized Stock Assessment") as financial_decision:
             # Experiment Tag
             first_tab = tab_creation_exploration_stage(0, first_comp, first_context)
-            first_general_instruction, first_round_instruction = (
-                first_tab["general_instruction"],
-                first_tab["round_instruction"],
-            )
             click_control_exploration_stage(
                 first_tab,
                 user_id,
@@ -985,10 +1087,6 @@ def create_demo():
                 system_description_without_context,
             )
             second_tab = tab_creation_exploration_stage(1, second_comp, second_context)
-            second_general_instruction, second_round_instruction = (
-                second_tab["general_instruction"],
-                second_tab["round_instruction"],
-            )
             click_control_exploration_stage(
                 second_tab,
                 user_id,
@@ -997,10 +1095,6 @@ def create_demo():
                 system_description_without_context,
             )
             third_tab = tab_creation_exploration_stage(2, third_comp, third_context)
-            third_general_instruction, third_round_instruction = (
-                third_tab["general_instruction"],
-                third_tab["round_instruction"],
-            )
             click_control_exploration_stage(
                 third_tab,
                 user_id,
@@ -1009,10 +1103,6 @@ def create_demo():
                 system_description_without_context,
             )
             fourth_tab = tab_creation_exploration_stage(3, fourth_comp, fourth_context)
-            fourth_general_instruction, fourth_round_instruction = (
-                fourth_tab["general_instruction"],
-                fourth_tab["round_instruction"],
-            )
             click_control_exploration_stage(
                 fourth_tab,
                 user_id,
@@ -1020,24 +1110,97 @@ def create_demo():
                 user_preference_elicitation_session,
                 system_description_without_context,
             )
-        # with gr.Tab("Final Evaluation Stage") as final_evaluation:
-        #     final_evaluation_tab = tab_final_evaluation()
-        #     (
-        #         ranking_first_comp,
-        #         ranking_second_comp,
-        #         ranking_third_comp,
-        #         ranking_fourth_comp,
-        #         evaluators,
-        #     ) = (
-        #         final_evaluation_tab["first"],
-        #         final_evaluation_tab["second"],
-        #         final_evaluation_tab["third"],
-        #         final_evaluation_tab["fourth"],
-        #         final_evaluation_tab["evaluators"],
-        #     )
-        #     click_control_final_evaluation(
-        #         final_evaluation_tab, user_id, first_comp, second_comp, third_comp, fourth_comp, evaluators
-        #     )
+            fifth_tab = tab_creation_exploration_stage(4, fifth_comp, fifth_context)
+            click_control_exploration_stage(
+                fifth_tab,
+                user_id,
+                fifth_comp_session,
+                user_preference_elicitation_session,
+                system_description_without_context,
+            )
+            sixth_tab = tab_creation_exploration_stage(5, sixth_comp, sixth_context)
+            click_control_exploration_stage(
+                sixth_tab,
+                user_id,
+                sixth_comp_session,
+                user_preference_elicitation_session,
+                system_description_without_context,
+            )
+            seventh_tab = tab_creation_exploration_stage(6, seventh_comp, seventh_context)
+            click_control_exploration_stage(
+                seventh_tab,
+                user_id,
+                seventh_comp_session,
+                user_preference_elicitation_session,
+                system_description_without_context,
+            )
+            eighth_tab = tab_creation_exploration_stage(7, eighth_comp, eighth_context)
+            click_control_exploration_stage(
+                eighth_tab,
+                user_id,
+                eighth_comp_session,
+                user_preference_elicitation_session,
+                system_description_without_context,
+            )
+            ninth_tab = tab_creation_exploration_stage(8, ninth_comp, ninth_context)
+            click_control_exploration_stage(
+                ninth_tab,
+                user_id,
+                ninth_comp_session,
+                user_preference_elicitation_session,
+                system_description_without_context,
+            )
+            tenth_tab = tab_creation_exploration_stage(9, tenth_comp, tenth_context)
+            click_control_exploration_stage(
+                tenth_tab,
+                user_id,
+                tenth_comp_session,
+                user_preference_elicitation_session,
+                system_description_without_context,
+            )
+            eleventh_tab = tab_creation_exploration_stage(10, eleventh_comp, eleventh_context)
+            click_control_exploration_stage(
+                eleventh_tab,
+                user_id,
+                eleventh_comp_session,
+                user_preference_elicitation_session,
+                system_description_without_context,
+            )
+            twelfth_tab = tab_creation_exploration_stage(11, twelfth_comp, twelfth_context)
+            click_control_exploration_stage(
+                twelfth_tab,
+                user_id,
+                twelfth_comp_session,
+                user_preference_elicitation_session,
+                system_description_without_context,
+            )
+            (
+                first_general_instruction,
+                second_general_instruction,
+                third_general_instruction,
+                fourth_general_instruction,
+                fifth_general_instruction,
+                sixth_general_instruction,
+                seventh_general_instruction,
+                eighth_general_instruction,
+                ninth_general_instruction,
+                tenth_general_instruction,
+                eleventh_general_instruction,
+                twelfth_general_instruction,
+            ) = (
+                first_tab["general_instruction"],
+                second_tab["general_instruction"],
+                third_tab["general_instruction"],
+                fourth_tab["general_instruction"],
+                fifth_tab["general_instruction"],
+                sixth_tab["general_instruction"],
+                seventh_tab["general_instruction"],
+                eighth_tab["general_instruction"],
+                ninth_tab["general_instruction"],
+                tenth_tab["general_instruction"],
+                eleventh_tab["general_instruction"],
+                twelfth_tab["general_instruction"],
+            )
 
         demo.load(
             set_initial_values,
@@ -1051,23 +1214,55 @@ def create_demo():
                 system_description_user_elicitation,
                 raw_context_list,
                 stock_context_list,
-                user_narrative,
+                # user_narrative,
                 first_comp,
                 first_context,
                 first_general_instruction,
-                first_round_instruction,
+                # first_round_instruction,
                 second_comp,
                 second_context,
                 second_general_instruction,
-                second_round_instruction,
+                # second_round_instruction,
                 third_comp,
                 third_context,
                 third_general_instruction,
-                third_round_instruction,
+                # third_round_instruction,
                 fourth_comp,
                 fourth_context,
                 fourth_general_instruction,
-                fourth_round_instruction,
+                # fourth_round_instruction,
+                fifth_comp,
+                fifth_context,
+                fifth_general_instruction,
+                # fifth_round_instruction,
+                sixth_comp,
+                sixth_context,
+                sixth_general_instruction,
+                # sixth_round_instruction,
+                seventh_comp,
+                seventh_context,
+                seventh_general_instruction,
+                # seventh_round_instruction,
+                eighth_comp,
+                eighth_context,
+                eighth_general_instruction,
+                # eighth_round_instruction,
+                ninth_comp,
+                ninth_context,
+                ninth_general_instruction,
+                # ninth_round_instruction,
+                tenth_comp,
+                tenth_context,
+                tenth_general_instruction,
+                # tenth_round_instruction,
+                eleventh_comp,
+                eleventh_context,
+                eleventh_general_instruction,
+                # eleventh_round_instruction,
+                twelfth_comp,
+                twelfth_context,
+                twelfth_general_instruction,
+                # twelfth_round_instruction,
             ],
         )
     return demo
@@ -1095,6 +1290,6 @@ if __name__ == "__main__":
     demo = create_demo()
     user_list, demo_list = load_username_and_pwd()
     demo.launch(
-        share=False,
+        share=True,
         # auth=user_list + demo_list + ["test", "test"],
     )

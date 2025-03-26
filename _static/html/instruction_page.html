@@ -1,52 +1,100 @@
-<div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
-    <h2 style="color: #2c3e50; text-align: center;">Welcome to the FinPersona Demonstration!</h2>
-    <p style="color: #34495e; text-align: center;">Please read the instructions carefully before beginning.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FinPersona Demonstration</title>
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #ecf0f1;
+      font-family: 'Montserrat', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    h2 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 5px;
+    }
+    p {
+      color: #34495e;
+      text-align: center;
+      margin-top: 0;
+    }
+    .card {
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 5px solid;
+      background: #f9f9f9;
+      border-radius: 5px;
+    }
+    /* Override paragraph alignment within cards */
+    .card p {
+      text-align: left;
+    }
+    .personality { 
+      border-color: #ff9800; 
+      background-color: #fff7e6; 
+    }
+    .preferences { 
+      border-color: #17a2b8; 
+      background-color: #eaf7f7; 
+    }
+    .stock { 
+      border-color: #6c63ff; 
+      background-color: #f2f5ff; 
+    }
+    .caution { 
+      border-color: #e74c3c; 
+      background-color: #fdecea; 
+      text-align: left; 
+    }
+    .caution h4 {
+      color: #e74c3c;
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome to the FinPersona Demonstration!</h2>
+    <p>Please read the instructions carefully before beginning.</p>
 
-    <div style="background-color: #fff7e6; padding: 15px; border-left: 5px solid #ff9800; margin-bottom: 20px;">
-        <strong>Step 1: Personality Injection</strong>
-        <p>
-            In this initial step, you will choose the personality style for your financial advisor.
-            Select either the <strong>Optimist (Friendly, Daring, Confident)</strong> or the 
-            <strong>Pragmatist (Disciplined, Cautious, Practical)</strong> option. This choice will set the tone and approach of your advisor for the entire demonstration.
-        </p>
+    <div class="card personality">
+      <strong>Step 1: Personality Injection</strong>
+      <p>
+        Ready to begin? Select your financial advisor’s style: <strong>Optimist (Friendly, Daring, Confident)</strong> or <strong>Pragmatist (Disciplined, Cautious, Practical)</strong>. Your choice sets the tone for the entire FinPersona demo!
+      </p>
     </div>
 
-    <div style="background-color: #eaf7f7; padding: 15px; border-left: 5px solid #17a2b8; margin-bottom: 20px;">
-        <strong>Step 2: User Preference Elicitation</strong>
-        <p>
-            During this stage, the financial advisors will ask you a series of questions to gather insights into your investment preferences and needs.
-            The information you provide will help guide the discussions and decisions in the subsequent stages.
-            <strong>Review the assigned user narrative thoroughly and role-play as the investor described.</strong>
-        </p>
+    <div class="card preferences">
+      <strong>Step 2: User Preference Elicitation</strong>
+      <p>
+        It’s question time! Your financial advisors need a snapshot of your investment needs and preferences. Feel free to use the sample user narrative or just answer as yourself—either way, your input will shape the next steps. Let’s dive in!
+      </p>
     </div>
 
-    <div style="background-color: #f2f5ff; padding: 15px; border-left: 5px solid #6c63ff; margin-bottom: 20px;">
-        <strong>Step 3: Personalized Stock Assessment</strong>
-        <p>
-            You will go through four rounds of financial discussions.
-            Please move through the following sequence: 1: Discuss → 2: Discuss → … → 4: Discuss.
-        </p>
-        <div style="margin-left: 20px;">
-            <h4 style="color: #6c63ff;">Discussion Phase (e.g., 1: Discuss)</h4>
-            <p style="color: #34495e;">
-                You will receive general instructions and information about a candidate stock, which has been <strong>randomly selected for this exploration</strong>.
-                After reviewing the instructions, engage with the financial advisor to make your decisions.
-                <strong>Once you feel that you have gathered enough information, proceed to the evaluation phase.</strong>
-                Note that the candidate stock is <strong>not a recommendation</strong> from the advisor.
-            </p>
-
-            <h4 style="color: #6c63ff;">Next Round (e.g., 2: Discuss)</h4>
-            <p style="color: #34495e;">
-                After evaluating one stock, move to the next tab and repeat the process until all four stocks have been assessed.
-            </p>
-        </div>
+    <div class="card stock">
+      <strong>Step 3: Personalized Stock Assessment</strong>
+      <p>
+        You’ll engage in financial discussions with an LLM-powered advisor. Pick one stock you’d like to explore—keeping in mind, this choice is not an official recommendation from the advisor.
+      </p>
     </div>
 
-    <!-- Cautionary Guidelines -->
-    <div style="background-color: #fdecea; padding: 15px; border-left: 5px solid #e74c3c; margin-top: 20px;">
-        <h4 style="color: #e74c3c;">Cautionary Guidelines</h4>
-        <ul style="color: #34495e;">
-            <li>Do not <strong>refresh</strong> or <strong>reload</strong> the page, as this will result in <strong>loss of data</strong> and require you to restart the demonstration.</li>
-        </ul>
+    <div class="card caution">
+      <h4>Cautionary Guidelines</h4>
+      <p>
+        Do not <strong>refresh</strong> or <strong>reload</strong> the page, as this will result in <strong>loss of data</strong> and require you to restart the demonstration.
+      </p>
     </div>
-</div>
+  </div>
+</body>
+</html>
